@@ -1,0 +1,34 @@
+syntax = "proto3";
+package runner;
+
+service RunnerService {
+    // Server streams jobs to agent
+    rpc FetchJob (AgentInfo) returns (stream JobRequest);
+    // Agent streams log lines back to server
+    rpc StreamLogs (stream LogLine) returns (JobResult);
+}
+
+message AgentInfo {
+    string agent_id = 1;
+    repeated string labels = 2;  // e.g. ["gpu", "linux"]
+}
+
+message JobRequest {
+    string job_id    = 1;
+    string stage     = 2;
+    string image     = 3;
+    repeated string commands = 4;
+    repeated string labels   = 5;
+    map<string, string> env  = 6;
+}
+
+message LogLine {
+    string job_id = 1;
+    string text   = 2;
+    bool   stderr = 3;
+}
+
+message JobResult {
+    string job_id    = 1;
+    int32  exit_code = 2;
+}

@@ -1,0 +1,22 @@
+name: demo-pipeline
+trigger:
+  branches: [main]
+  events: [push]
+
+stages:
+  lint:
+    runs-on: local
+    steps:
+      - name: Check Rust version
+        run: rustc --version
+      - name: Check cargo
+        run: cargo --version
+
+  test:
+    runs-on: local
+    needs: [lint]
+    steps:
+      - name: List files
+        run: ls -la src/
+      - name: Echo success
+        run: echo "All tests passed!"

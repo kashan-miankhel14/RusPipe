@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>RustPipe Dashboard</title>
+<style>
+  body { font-family: monospace; background: #0d1117; color: #c9d1d9; margin: 0; padding: 20px; }
+  h1 { color: #f78166; }
+  #runs { margin-top: 20px; }
+  .run { background: #161b22; border: 1px solid #30363d; border-radius: 6px; padding: 12px; margin: 8px 0; cursor: pointer; }
+  .run:hover { border-color: #58a6ff; }
+  .status-triggered { color: #d29922; }
+  .status-passed    { color: #3fb950; }
+  .status-failed    { color: #f85149; }
+  #logs { background: #0d1117; border: 1px solid #30363d; border-radius: 6px; padding: 12px; margin-top: 20px; min-height: 200px; white-space: pre-wrap; font-size: 12px; }
+  #log-title { color: #58a6ff; margin-top: 20px; }
+</style>
+</head>
+<body>
+<h1>⚡ RustPipe Dashboard</h1>
+<button onclick="loadRuns()" style="background:#21262d;color:#c9d1d9;border:1px solid #30363d;padding:6px 14px;border-radius:6px;cursor:pointer;">Refresh Runs</button>
+<div id="runs"><p style="color:#8b949e">Loading...</p></div>
+<h3 id="log-title" style="display:none">📋 Live Logs</h3>
+<div id="logs" style="display:none"></div>
+
+<script>
+async function loadRuns() {
+  const res = await fetch('/api/v1/runs');
+  const data = await res.json();
+  const runs = data.runs || [];
+  const el = document.getElementById('runs');
+  if (!runs.length) { el.innerHTML = '<p style="color:#8b949e">No runs yet.</p>'; return; }
+  el.innerHTML = runs.map(r => `
+    <div class="run" onclick="streamLogs(${r.id})">
+      <strong>#${r.id}</strong> — ${r.pipeline}
+      <span class="status-${r.status}"> [${r.status}]</span>
+      <br><small>${r.branch} @ ${r.commit.slice(0,8)}</small>
+    </div>`).join('');
+}
+
+function streamLogs(runId) {
+  const logEl = document.getElementById('logs');
+  const title = document.getElementById('log-title');
+  logEl.style.display = 'block';
+  title.style.display = 'block';
+  logEl.textContent = '';
+
+  const proto = location.protocol === 'https:' ? 'wss' : 'ws';
+  const ws = new WebSocket(`${proto}://${location.host}/ws/runs/${runId}/logs`);
+
+  ws.onmessage = (e) => {
+    const msg = JSON.parse(e.data);
+    if (msg.type === 'log')    logEl.textContent += msg.text + '\n';
+    if (msg.type === 'status') logEl.textContent += `[status] ${msg.status} — ${msg.branch} @ ${msg.commit.slice(0,8)}\n`;
+    if (msg.type === 'done')   logEl.textContent += '\n✅ Stream complete\n';
+    if (msg.type === 'error')  logEl.textContent += `❌ ${msg.message}\n`;
+  };
+  ws.onerror = () => logEl.textContent += '\n⚠ WebSocket error\n';
+}
+
+loadRuns();
+</script>
+</body>
+</html>
