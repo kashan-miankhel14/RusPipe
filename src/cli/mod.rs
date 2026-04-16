@@ -197,8 +197,8 @@ pub async fn run_history(limit: i64) {
         println!("{} No runs recorded yet.", "!".yellow());
         return;
     }
-    println!("{:<5} {:<20} {:<12} {:<10} {:<10} {}",
-        "ID", "Pipeline", "Branch", "Status", "Commit", "Started");
+    println!("{:<5} {:<20} {:<12} {:<10} {:<10} Started",
+        "ID", "Pipeline", "Branch", "Status", "Commit");
     println!("{}", "─".repeat(75).dimmed());
     for r in runs {
         let status_colored = match r.status.as_str() {

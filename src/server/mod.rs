@@ -48,7 +48,7 @@ pub struct WebhookConfig<'a> {
 
 impl<'a> WebhookConfig<'a> {
     pub fn matches_branch(&self, branch: &str) -> bool {
-        self.branch_filter.map_or(true, |f| branch == f)
+        self.branch_filter.is_none_or(|f| branch == f)
     }
 }
 

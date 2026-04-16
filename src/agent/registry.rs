@@ -56,7 +56,7 @@ impl RunnerRegistry {
             .runners
             .values()
             .filter(|r| {
-                required_label.map_or(true, |lbl| r.labels.iter().any(|l| l == lbl))
+                required_label.is_none_or(|lbl| r.labels.iter().any(|l| l == lbl))
             })
             .collect();
 

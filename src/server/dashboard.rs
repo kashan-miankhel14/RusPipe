@@ -47,7 +47,7 @@ async fn handle_ws(mut socket: WebSocket, run_id: u64, state: Arc<AppState>) {
 
     match first_msg {
         Some(msg) => {
-            if socket.send(Message::Text(msg.into())).await.is_err() {
+            if socket.send(Message::Text(msg)).await.is_err() {
                 return;
             }
         }
@@ -55,8 +55,7 @@ async fn handle_ws(mut socket: WebSocket, run_id: u64, state: Arc<AppState>) {
             let _ = socket
                 .send(Message::Text(
                     serde_json::json!({"type": "error", "message": "run not found"})
-                        .to_string()
-                        .into(),
+                        .to_string(),
                 ))
                 .await;
             return;
@@ -76,12 +75,12 @@ async fn handle_ws(mut socket: WebSocket, run_id: u64, state: Arc<AppState>) {
                     "line": line,
                     "text": format!("[run {}] step output line {}", run_id, line),
                 });
-                if socket.send(Message::Text(log_msg.to_string().into())).await.is_err() {
+                if socket.send(Message::Text(log_msg.to_string())).await.is_err() {
                     break;
                 }
                 if line >= 20 {
                     let done = serde_json::json!({"type": "done", "run_id": run_id});
-                    let _ = socket.send(Message::Text(done.to_string().into())).await;
+                    let _ = socket.send(Message::Text(done.to_string())).await;
                     break;
                 }
             }
