@@ -368,6 +368,19 @@ GitOps CI/CD pipeline engine in Rust.
 
 ---
 
+### Milestone 18 — GitHub Actions CI + Webhook → Pipeline Execution ✅
+**Goal:** Make the project test itself on every push, and wire the webhook to actually run pipelines.
+
+**Rust:** `tokio::spawn`, `drop(MutexGuard)` before await, GitHub Actions YAML
+**DevOps:** CI pipeline, webhook-triggered execution, non-blocking job dispatch
+
+- [x] `.github/workflows/ci.yml` — runs clippy (deny warnings), 24 tests, release build on every push/PR
+- [x] Webhook handler now spawns a background task that parses `.rustpipe.yml` and executes the pipeline
+- [x] Every webhook-triggered run is recorded in SQLite with branch + commit SHA
+- [x] `drop(runs)` releases MutexGuard before `tokio::spawn` to avoid holding lock across await point
+
+---
+
 ## Priority Order
 
 | Priority | Milestone | Key Concepts Unlocked |
@@ -389,3 +402,4 @@ GitOps CI/CD pipeline engine in Rust.
 | 15 | M15 — Custom DSL + Drift | nom parsing, drift detection |
 | 16 | M16 — Zero-Warning Build + Library Crate | explicit lifetimes, `pub mod`, binary+library crate |
 | 17 | M17 — Integration Test Suite | `#[test]`, external test crate, bug-driven fixes |
+| 18 | M18 — GitHub Actions CI + Webhook Execution | `tokio::spawn`, CI pipeline, webhook-triggered runs |

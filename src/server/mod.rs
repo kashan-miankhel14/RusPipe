@@ -110,10 +110,32 @@ async fn handle_github_webhook(
     let id = runs.len() as u64 + 1;
     runs.push(RunRecord {
         id,
-        pipeline: repo,
+        pipeline: repo.clone(),
         branch: branch.clone(),
         commit: commit.clone(),
         status: "triggered".into(),
+    });
+    drop(runs);
+
+    // Spawn pipeline execution in background — non-blocking
+    let db_path = state.db_path.clone();
+    let branch_clone = branch.clone();
+    let commit_clone = commit.clone();
+    tokio::spawn(async move {
+        let pipeline_file = ".rustpipe.yml";
+        match crate::pipeline::parse(pipeline_file) {
+            Ok(p) => {
+                if let Ok(pool) = crate::db::open(&db_path).await {
+                    if let Ok(run_id) = crate::db::insert_run(&pool, &p.name, &branch_clone, &commit_clone).await {
+                        let result = crate::runner::shell::execute_with_db(&p, Some((&pool, run_id.value))).await;
+                        let status = if result.is_ok() { "passed" } else { "failed" };
+                        let _ = crate::db::finish_run(&pool, run_id, status).await;
+                        info!(status = %status, "Webhook-triggered pipeline complete");
+                    }
+                }
+            }
+            Err(e) => warn!(error = %e, "Webhook: failed to parse pipeline"),
+        }
     });
 
     (
